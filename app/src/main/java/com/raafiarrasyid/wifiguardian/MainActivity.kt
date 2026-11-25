@@ -7,13 +7,13 @@ import android.net.NetworkCapabilities
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,271 +49,414 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Dashboard() {
-
     val context = LocalContext.current
 
-    val status = remember {
+    var showScanner by remember { mutableStateOf(false) }
+
+    var status by remember {
         mutableStateOf("Siap diperiksa")
     }
 
-    val description = remember {
+    var description by remember {
         mutableStateOf(
             "Hubungkan perangkat ke Wi-Fi untuk memulai pemeriksaan."
         )
     }
 
-    val statusColor = remember {
+    var statusColor by remember {
         mutableStateOf(AccentGreen)
     }
 
-    val checked = remember {
-        mutableStateOf(false)
-    }
+    var checked by remember { mutableStateOf(false) }
 
     fun checkNetwork() {
-
         try {
             val manager = context.getSystemService(
                 Context.CONNECTIVITY_SERVICE
             ) as ConnectivityManager
 
             val network = manager.activeNetwork
-
             val capabilities =
                 manager.getNetworkCapabilities(network)
 
-            if (capabilities == null) {
+            when {
+                capabilities == null -> {
+                    status = "Tidak Terhubung"
+                    description = "Tidak ditemukan koneksi aktif."
+                    statusColor = AccentRed
+                }
 
-                status.value = "Tidak Terhubung"
-                description.value =
-                    "Tidak ditemukan koneksi jaringan aktif."
-
-                statusColor.value = AccentRed
-
-            } else {
-
-                val wifi = capabilities.hasTransport(
+                capabilities.hasTransport(
                     NetworkCapabilities.TRANSPORT_WIFI
-                )
+                ) -> {
+                    status = "Wi-Fi Terhubung"
+                    description = "Jaringan Wi-Fi berhasil terdeteksi."
+                    statusColor = AccentGreen
+                }
 
-                val mobile = capabilities.hasTransport(
+                capabilities.hasTransport(
                     NetworkCapabilities.TRANSPORT_CELLULAR
-                )
+                ) -> {
+                    status = "Data Seluler Aktif"
+                    description = "Perangkat menggunakan jaringan seluler."
+                    statusColor = AccentOrange
+                }
 
-                val ethernet = capabilities.hasTransport(
-                    NetworkCapabilities.TRANSPORT_ETHERNET
-                )
-
-                val hasInternet = capabilities.hasCapability(
-                    NetworkCapabilities.NET_CAPABILITY_INTERNET
-                )
-
-                val validated = capabilities.hasCapability(
-                    NetworkCapabilities.NET_CAPABILITY_VALIDATED
-                )
-
-                when {
-
-                    wifi && validated -> {
-                        status.value = "Wi-Fi Terhubung"
-                        description.value =
-                            "Wi-Fi aktif dan akses internet berhasil terdeteksi."
-
-                        statusColor.value = AccentGreen
-                    }
-
-                    wifi && hasInternet -> {
-                        status.value = "Wi-Fi Terhubung"
-                        description.value =
-                            "Wi-Fi aktif, tetapi akses internet belum terverifikasi."
-
-                        statusColor.value = AccentOrange
-                    }
-
-                    wifi -> {
-                        status.value = "Wi-Fi Tanpa Internet"
-                        description.value =
-                            "Perangkat terhubung ke Wi-Fi, tetapi akses internet tidak tersedia."
-
-                        statusColor.value = AccentRed
-                    }
-
-                    mobile && validated -> {
-                        status.value = "Data Seluler Aktif"
-                        description.value =
-                            "Perangkat terhubung melalui jaringan seluler dan internet tersedia."
-
-                        statusColor.value = AccentGreen
-                    }
-
-                    mobile -> {
-                        status.value = "Data Seluler Terhubung"
-                        description.value =
-                            "Jaringan seluler terdeteksi, tetapi internet belum terverifikasi."
-
-                        statusColor.value = AccentOrange
-                    }
-
-                    ethernet && validated -> {
-                        status.value = "Ethernet Terhubung"
-                        description.value =
-                            "Koneksi kabel aktif dan internet tersedia."
-
-                        statusColor.value = AccentGreen
-                    }
-
-                    else -> {
-                        status.value = "Jaringan Terdeteksi"
-                        description.value =
-                            "Ada koneksi jaringan, tetapi jenis atau akses internet belum dapat dipastikan."
-
-                        statusColor.value = AccentOrange
-                    }
+                else -> {
+                    status = "Jaringan Terdeteksi"
+                    description = "Jenis jaringan belum dikenali."
+                    statusColor = AccentOrange
                 }
             }
 
-            checked.value = true
+            checked = true
 
         } catch (e: Exception) {
-
-            status.value = "Pemeriksaan Gagal"
-            description.value =
-                "Terjadi kesalahan saat memeriksa jaringan: ${e.message}"
-
-            statusColor.value = AccentRed
-            checked.value = true
+            status = "Pemeriksaan Gagal"
+            description = e.message ?: "Terjadi kesalahan."
+            statusColor = AccentRed
+            checked = true
         }
     }
+
+    if (showScanner) {
+        DeviceScannerScreen(
+            onBack = { showScanner = false }
+        )
+    } else {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = DarkBackground
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(18.dp)
+            ) {
+                Column {
+                    Text(
+                        "WIFI GUARDIAN",
+                        color = AccentBlue,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Text(
+                        "Network Dashboard",
+                        color = Color.White,
+                        fontSize = 27.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Text(
+                        "Lindungi dan optimalkan jaringanmu",
+                        color = Color.LightGray,
+                        fontSize = 13.sp
+                    )
+                }
+
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = CardBackground
+                    ),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Text(
+                            "STATUS JARINGAN",
+                            color = AccentGreen,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Text(
+                            status,
+                            color = statusColor,
+                            fontSize = 23.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Text(
+                            description,
+                            color = Color.LightGray,
+                            fontSize = 13.sp
+                        )
+
+                        Button(
+                            onClick = { checkNetwork() },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                if (checked) "Periksa Ulang"
+                                else "Periksa Jaringan"
+                            )
+                        }
+                    }
+                }
+
+                Text(
+                    "TOOLS & OPTIMIZATION",
+                    color = Color.White,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                FeatureCard(
+                    "Pemindai Perangkat",
+                    "Periksa perangkat di jaringan lokal",
+                    onClick = { showScanner = true }
+                )
+
+                FeatureCard(
+                    "Keamanan Wi-Fi",
+                    "Periksa jenis keamanan jaringan"
+                )
+
+                FeatureCard(
+                    "Analisis Sinyal",
+                    "Pantau kekuatan dan frekuensi Wi-Fi"
+                )
+
+                FeatureCard(
+                    "Speed Test & Ping",
+                    "Ukur kecepatan dan latensi"
+                )
+
+                FeatureCard(
+                    "Rekomendasi DNS",
+                    "Temukan pilihan DNS yang sesuai"
+                )
+
+                FeatureCard(
+                    "Router Assistant",
+                    "Panduan pengaturan router"
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Text(
+                    "WiFi Guardian • Version 1.0",
+                    color = Color.Gray,
+                    fontSize = 11.sp,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DeviceScannerScreen(onBack: () -> Unit) {
+    val context = LocalContext.current
+
+    var scanning by remember { mutableStateOf(false) }
+    var scanned by remember { mutableStateOf(false) }
+
+    var devices by remember {
+        mutableStateOf<List<DeviceInfo>>(emptyList())
+    }
+
+    var error by remember { mutableStateOf<String?>(null) }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = DarkBackground
     ) {
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Text(
+                "‹  Kembali",
+                color = AccentBlue,
+                fontSize = 16.sp,
+                modifier = Modifier.clickable { onBack() }
+            )
 
-            Column {
+            Text(
+                "WIFI GUARDIAN",
+                color = AccentBlue,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold
+            )
 
-                Text(
-                    "WIFI GUARDIAN",
-                    color = AccentBlue,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold
-                )
+            Text(
+                "Pemindai Perangkat",
+                color = Color.White,
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Bold
+            )
 
-                Text(
-                    "Network Dashboard",
-                    color = Color.White,
-                    fontSize = 27.sp,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Text(
-                    "Lindungi dan optimalkan jaringanmu",
-                    color = Color.LightGray,
-                    fontSize = 13.sp
-                )
-            }
+            Text(
+                "Temukan perangkat yang merespons di jaringan Wi-Fi lokal.",
+                color = Color.LightGray,
+                fontSize = 13.sp
+            )
 
             Card(
                 colors = CardDefaults.cardColors(
                     containerColor = CardBackground
                 ),
-                shape = RoundedCornerShape(20.dp)
+                shape = RoundedCornerShape(18.dp)
             ) {
-
                 Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-
                     Text(
-                        "STATUS JARINGAN",
+                        "STATUS PEMINDAIAN",
                         color = AccentGreen,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp
                     )
 
                     Text(
-                        status.value,
-                        color = statusColor.value,
-                        fontSize = 23.sp,
+                        when {
+                            scanning -> "Sedang memindai..."
+                            error != null -> "Pemindaian gagal"
+                            scanned && devices.isNotEmpty() ->
+                                "Pemindaian selesai"
+                            scanned -> "Tidak ada perangkat merespons"
+                            else -> "Siap memindai"
+                        },
+                        color = when {
+                            scanning -> AccentOrange
+                            error != null -> AccentRed
+                            else -> AccentGreen
+                        },
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
 
+                    if (scanning) {
+                        LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = AccentBlue
+                        )
+                    }
+
                     Text(
-                        description.value,
+                        when {
+                            scanning ->
+                                "Mohon tunggu. Sedang memeriksa alamat perangkat."
+                            error != null -> error!!
+                            scanned ->
+                                "Ditemukan ${devices.size} perangkat yang merespons."
+                            else ->
+                                "Pastikan HP terhubung ke Wi-Fi sebelum memulai."
+                        },
                         color = Color.LightGray,
                         fontSize = 13.sp
                     )
 
                     Button(
                         onClick = {
-                            checkNetwork()
+                            if (!scanning) {
+                                scanning = true
+                                scanned = false
+                                error = null
+                                devices = emptyList()
+
+                                NetworkScanner.scan(
+                                    context.applicationContext
+                                ) { result, message ->
+                                    devices = result
+                                    error = message
+                                    scanned = true
+                                    scanning = false
+                                }
+                            }
                         },
+                        enabled = !scanning,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            if (checked.value)
-                                "Periksa Ulang"
-                            else
-                                "Periksa Jaringan"
+                            if (scanning) "Memindai..."
+                            else "Mulai Pemindaian"
                         )
                     }
                 }
             }
 
             Text(
-                "TOOLS & OPTIMIZATION",
+                "PERANGKAT TERDETEKSI",
                 color = Color.White,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp
             )
 
-            FeatureCard(
-                "Pemindai Perangkat",
-                "Periksa perangkat di jaringan lokal"
-            )
+            if (devices.isEmpty() && scanned && error == null) {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = CardBackground
+                    )
+                ) {
+                    Text(
+                        "Belum ada perangkat yang merespons pemindaian. " +
+                        "Perangkat yang memblokir ping mungkin tidak terdeteksi.",
+                        color = Color.LightGray,
+                        modifier = Modifier.padding(16.dp),
+                        fontSize = 13.sp
+                    )
+                }
+            }
 
-            FeatureCard(
-                "Keamanan Wi-Fi",
-                "Periksa jenis keamanan jaringan"
-            )
+            devices.forEachIndexed { index, device ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = CardBackground
+                    ),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "●",
+                            color = AccentGreen,
+                            fontSize = 20.sp
+                        )
 
-            FeatureCard(
-                "Analisis Sinyal",
-                "Pantau kekuatan dan frekuensi Wi-Fi"
-            )
+                        Spacer(modifier = Modifier.width(14.dp))
 
-            FeatureCard(
-                "Speed Test & Ping",
-                "Ukur kecepatan dan latensi"
-            )
+                        Column {
+                            Text(
+                                "Perangkat ${index + 1}",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
 
-            FeatureCard(
-                "Rekomendasi DNS",
-                "Temukan pilihan DNS yang sesuai"
-            )
+                            Text(
+                                "IP: ${device.ipAddress}",
+                                color = Color.LightGray,
+                                fontSize = 13.sp
+                            )
 
-            FeatureCard(
-                "Router Assistant",
-                "Panduan pengaturan router"
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
+                            Text(
+                                "Merespons jaringan",
+                                color = AccentGreen,
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+                }
+            }
 
             Text(
-                "WiFi Guardian • Version 1.0",
+                "WiFi Guardian • Network Scanner",
                 color = Color.Gray,
                 fontSize = 11.sp,
-                modifier = Modifier.align(
-                    Alignment.CenterHorizontally
-                )
+                modifier = Modifier.align(Alignment.CenterHorizontally)
             )
         }
     }
@@ -322,26 +465,25 @@ fun Dashboard() {
 @Composable
 fun FeatureCard(
     title: String,
-    description: String
+    description: String,
+    onClick: () -> Unit = {}
 ) {
-
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = CardBackground
         ),
         shape = RoundedCornerShape(14.dp)
     ) {
-
         Row(
             modifier = Modifier.padding(15.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-
                 Text(
                     title,
                     color = Color.White,
