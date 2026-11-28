@@ -8,8 +8,11 @@ import android.os.Handler
 import android.os.Looper
 import java.net.Inet4Address
 import java.net.InetAddress
-import java.util.concurrent.Executors
+import java.net.InetSocketAddress
+import java.net.Socket
 import java.util.concurrent.Callable
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 data class DeviceInfo(
     val ipAddress: String
@@ -18,6 +21,10 @@ data class DeviceInfo(
 object NetworkScanner {
 
     private val mainHandler = Handler(Looper.getMainLooper())
+
+    private val commonPorts = listOf(
+        80, 443, 8080, 22, 53, 5555, 62078
+    )
 
     fun scan(
         context: Context,
@@ -52,9 +59,6 @@ object NetworkScanner {
                     it.address is Inet4Address
                 } ?: throw Exception("Alamat IPv4 tidak ditemukan.")
 
-                val localIp = address.address.hostAddress
-                    ?: throw Exception("IP perangkat tidak terbaca.")
-
                 val ipBytes = address.address.address
 
                 val ipNumber = ipBytes.fold(0L) { result, byte ->
@@ -62,6 +66,10 @@ object NetworkScanner {
                 }
 
                 val prefix = address.prefixLength
+
+                if (prefix !in 1..30) {
+                    throw Exception("Subnet IPv4 tidak didukung.")
+                }
 
                 val mask = (0xFFFFFFFFL shl (32 - prefix)) and
                     0xFFFFFFFFL
@@ -73,7 +81,7 @@ object NetworkScanner {
                 var start = networkAddress + 1
                 var end = broadcastAddress - 1
 
-                // Batasi pemindaian maksimal 254 alamat.
+                // Batasi maksimal 254 alamat.
                 if (end - start + 1 > 254) {
                     start = (ipNumber and 0xFFFFFF00L) + 1
                     end = (ipNumber and 0xFFFFFF00L) + 254
@@ -85,7 +93,9 @@ object NetworkScanner {
                     val tasks = (start..end)
                         .filter { it != ipNumber }
                         .map { number ->
+
                             Callable<DeviceInfo?> {
+
                                 val bytes = byteArrayOf(
                                     (number shr 24).toByte(),
                                     (number shr 16).toByte(),
@@ -95,19 +105,58 @@ object NetworkScanner {
 
                                 val host = InetAddress.getByAddress(bytes)
 
-                                if (host.isReachable(350)) {
-                                    DeviceInfo(host.hostAddress ?: "")
+                                var reachable = host.isReachable(250)
+
+                                // Periksa beberapa port TCP
+                                // jika ping tidak merespons.
+                                if (!reachable) {
+                                    for (port in commonPorts) {
+                                        try {
+                                            Socket().use { socket ->
+                                                socket.connect(
+                                                    InetSocketAddress(
+                                                        host,
+                                                        port
+                                                    ),
+                                                    180
+                                                )
+                                            }
+
+                                            reachable = true
+                                            break
+
+                                        } catch (_: Exception) {
+                                            // Lanjutkan ke port berikutnya.
+                                        }
+                                    }
+                                }
+
+                                if (reachable) {
+                                    DeviceInfo(
+                                        host.hostAddress ?: ""
+                                    )
                                 } else {
                                     null
                                 }
                             }
                         }
 
-                    val results = executor.invokeAll(tasks)
+                    val results = executor.invokeAll(
+                        tasks,
+                        30,
+                        TimeUnit.SECONDS
+                    )
 
-                    val devices = results.mapNotNull {
-                        it.get()
-                    }.sortedBy { it.ipAddress }
+                    val devices = results
+                        .filterNot { it.isCancelled }
+                        .mapNotNull {
+                            try {
+                                it.get()
+                            } catch (_: Exception) {
+                                null
+                            }
+                        }
+                        .sortedBy { it.ipAddress }
 
                     mainHandler.post {
                         callback(devices, null)
@@ -118,6 +167,7 @@ object NetworkScanner {
                 }
 
             } catch (e: Exception) {
+
                 mainHandler.post {
                     callback(
                         emptyList(),
@@ -125,6 +175,7 @@ object NetworkScanner {
                     )
                 }
             }
+
         }.start()
     }
 }
