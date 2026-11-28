@@ -30,6 +30,7 @@ private val AccentRed = Color(0xFFFF5252)
 private val AccentOrange = Color(0xFFFFB74D)
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -49,9 +50,12 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Dashboard() {
+
     val context = LocalContext.current
 
-    var showScanner by remember { mutableStateOf(false) }
+    var showScanner by remember {
+        mutableStateOf(false)
+    }
 
     var status by remember {
         mutableStateOf("Siap diperiksa")
@@ -67,19 +71,25 @@ fun Dashboard() {
         mutableStateOf(AccentGreen)
     }
 
-    var checked by remember { mutableStateOf(false) }
+    var checked by remember {
+        mutableStateOf(false)
+    }
 
     fun checkNetwork() {
+
         try {
+
             val manager = context.getSystemService(
                 Context.CONNECTIVITY_SERVICE
             ) as ConnectivityManager
 
             val network = manager.activeNetwork
+
             val capabilities =
                 manager.getNetworkCapabilities(network)
 
             when {
+
                 capabilities == null -> {
                     status = "Tidak Terhubung"
                     description = "Tidak ditemukan koneksi aktif."
@@ -112,6 +122,7 @@ fun Dashboard() {
             checked = true
 
         } catch (e: Exception) {
+
             status = "Pemeriksaan Gagal"
             description = e.message ?: "Terjadi kesalahan."
             statusColor = AccentRed
@@ -120,22 +131,31 @@ fun Dashboard() {
     }
 
     if (showScanner) {
+
         DeviceScannerScreen(
-            onBack = { showScanner = false }
+            onBack = {
+                showScanner = false
+            }
         )
+
     } else {
+
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = DarkBackground
         ) {
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
                     .padding(20.dp),
+
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
+
                 Column {
+
                     Text(
                         "WIFI GUARDIAN",
                         color = AccentBlue,
@@ -163,10 +183,14 @@ fun Dashboard() {
                     ),
                     shape = RoundedCornerShape(20.dp)
                 ) {
+
                     Column(
                         modifier = Modifier.padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+
+                        verticalArrangement =
+                            Arrangement.spacedBy(10.dp)
                     ) {
+
                         Text(
                             "STATUS JARINGAN",
                             color = AccentGreen,
@@ -188,12 +212,18 @@ fun Dashboard() {
                         )
 
                         Button(
-                            onClick = { checkNetwork() },
+                            onClick = {
+                                checkNetwork()
+                            },
                             modifier = Modifier.fillMaxWidth()
                         ) {
+
                             Text(
-                                if (checked) "Periksa Ulang"
-                                else "Periksa Jaringan"
+                                if (checked) {
+                                    "Periksa Ulang"
+                                } else {
+                                    "Periksa Jaringan"
+                                }
                             )
                         }
                     }
@@ -207,43 +237,49 @@ fun Dashboard() {
                 )
 
                 FeatureCard(
-                    "Pemindai Perangkat",
-                    "Periksa perangkat di jaringan lokal",
-                    onClick = { showScanner = true }
+                    title = "Pemindai Perangkat",
+                    description = "Periksa perangkat di jaringan lokal",
+                    onClick = {
+                        showScanner = true
+                    }
                 )
 
                 FeatureCard(
-                    "Keamanan Wi-Fi",
-                    "Periksa jenis keamanan jaringan"
+                    title = "Keamanan Wi-Fi",
+                    description = "Periksa jenis keamanan jaringan"
                 )
 
                 FeatureCard(
-                    "Analisis Sinyal",
-                    "Pantau kekuatan dan frekuensi Wi-Fi"
+                    title = "Analisis Sinyal",
+                    description = "Pantau kekuatan dan frekuensi Wi-Fi"
                 )
 
                 FeatureCard(
-                    "Speed Test & Ping",
-                    "Ukur kecepatan dan latensi"
+                    title = "Speed Test & Ping",
+                    description = "Ukur kecepatan dan latensi"
                 )
 
                 FeatureCard(
-                    "Rekomendasi DNS",
-                    "Temukan pilihan DNS yang sesuai"
+                    title = "Rekomendasi DNS",
+                    description = "Temukan pilihan DNS yang sesuai"
                 )
 
                 FeatureCard(
-                    "Router Assistant",
-                    "Panduan pengaturan router"
+                    title = "Router Assistant",
+                    description = "Panduan pengaturan router"
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(
+                    modifier = Modifier.height(20.dp)
+                )
 
                 Text(
                     "WiFi Guardian • Version 1.0",
                     color = Color.Gray,
                     fontSize = 11.sp,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                    modifier = Modifier.align(
+                        Alignment.CenterHorizontally
+                    )
                 )
             }
         }
@@ -251,34 +287,49 @@ fun Dashboard() {
 }
 
 @Composable
-fun DeviceScannerScreen(onBack: () -> Unit) {
+fun DeviceScannerScreen(
+    onBack: () -> Unit
+) {
+
     val context = LocalContext.current
 
-    var scanning by remember { mutableStateOf(false) }
-    var scanned by remember { mutableStateOf(false) }
+    var scanning by remember {
+        mutableStateOf(false)
+    }
+
+    var scanned by remember {
+        mutableStateOf(false)
+    }
 
     var devices by remember {
         mutableStateOf<List<DeviceInfo>>(emptyList())
     }
 
-    var error by remember { mutableStateOf<String?>(null) }
+    var error by remember {
+        mutableStateOf<String?>(null)
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = DarkBackground
     ) {
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
+
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+
             Text(
                 "‹  Kembali",
                 color = AccentBlue,
                 fontSize = 16.sp,
-                modifier = Modifier.clickable { onBack() }
+                modifier = Modifier.clickable {
+                    onBack()
+                }
             )
 
             Text(
@@ -296,7 +347,7 @@ fun DeviceScannerScreen(onBack: () -> Unit) {
             )
 
             Text(
-                "Temukan perangkat yang merespons di jaringan Wi-Fi lokal.",
+                "Pantau perangkat yang merespons di jaringan Wi-Fi lokal.",
                 color = Color.LightGray,
                 fontSize = 13.sp
             )
@@ -307,10 +358,14 @@ fun DeviceScannerScreen(onBack: () -> Unit) {
                 ),
                 shape = RoundedCornerShape(18.dp)
             ) {
+
                 Column(
                     modifier = Modifier.padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+
+                    verticalArrangement =
+                        Arrangement.spacedBy(12.dp)
                 ) {
+
                     Text(
                         "STATUS PEMINDAIAN",
                         color = AccentGreen,
@@ -322,21 +377,22 @@ fun DeviceScannerScreen(onBack: () -> Unit) {
                         when {
                             scanning -> "Sedang memindai..."
                             error != null -> "Pemindaian gagal"
-                            scanned && devices.isNotEmpty() ->
-                                "Pemindaian selesai"
-                            scanned -> "Tidak ada perangkat merespons"
+                            scanned -> "Pemindaian selesai"
                             else -> "Siap memindai"
                         },
+
                         color = when {
                             scanning -> AccentOrange
                             error != null -> AccentRed
                             else -> AccentGreen
                         },
+
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
 
                     if (scanning) {
+
                         LinearProgressIndicator(
                             modifier = Modifier.fillMaxWidth(),
                             color = AccentBlue
@@ -346,20 +402,27 @@ fun DeviceScannerScreen(onBack: () -> Unit) {
                     Text(
                         when {
                             scanning ->
-                                "Mohon tunggu. Sedang memeriksa alamat perangkat."
-                            error != null -> error!!
+                                "Memeriksa perangkat dalam jaringan lokal."
+
+                            error != null ->
+                                error ?: "Terjadi kesalahan."
+
                             scanned ->
-                                "Ditemukan ${devices.size} perangkat yang merespons."
+                                "Ditemukan ${devices.size} perangkat."
+
                             else ->
                                 "Pastikan HP terhubung ke Wi-Fi sebelum memulai."
                         },
+
                         color = Color.LightGray,
                         fontSize = 13.sp
                     )
 
                     Button(
                         onClick = {
+
                             if (!scanning) {
+
                                 scanning = true
                                 scanned = false
                                 error = null
@@ -368,6 +431,7 @@ fun DeviceScannerScreen(onBack: () -> Unit) {
                                 NetworkScanner.scan(
                                     context.applicationContext
                                 ) { result, message ->
+
                                     devices = result
                                     error = message
                                     scanned = true
@@ -375,12 +439,18 @@ fun DeviceScannerScreen(onBack: () -> Unit) {
                                 }
                             }
                         },
+
                         enabled = !scanning,
+
                         modifier = Modifier.fillMaxWidth()
                     ) {
+
                         Text(
-                            if (scanning) "Memindai..."
-                            else "Mulai Pemindaian"
+                            when {
+                                scanning -> "Memindai..."
+                                scanned -> "Pindai Ulang"
+                                else -> "Mulai Pemindaian"
+                            }
                         )
                     }
                 }
@@ -394,60 +464,124 @@ fun DeviceScannerScreen(onBack: () -> Unit) {
             )
 
             if (devices.isEmpty() && scanned && error == null) {
+
                 Card(
                     colors = CardDefaults.cardColors(
                         containerColor = CardBackground
-                    )
+                    ),
+                    shape = RoundedCornerShape(14.dp)
                 ) {
+
                     Text(
-                        "Belum ada perangkat yang merespons pemindaian. " +
-                        "Perangkat yang memblokir ping mungkin tidak terdeteksi.",
+                        "Tidak ditemukan perangkat yang merespons. " +
+                            "Beberapa perangkat mungkin memblokir pemeriksaan jaringan.",
+
                         color = Color.LightGray,
+
                         modifier = Modifier.padding(16.dp),
+
                         fontSize = 13.sp
                     )
                 }
             }
 
             devices.forEachIndexed { index, device ->
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
+
                     colors = CardDefaults.cardColors(
                         containerColor = CardBackground
                     ),
-                    shape = RoundedCornerShape(14.dp)
+
+                    shape = RoundedCornerShape(16.dp)
                 ) {
-                    Row(
+
+                    Column(
                         modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+
+                        verticalArrangement =
+                            Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(
-                            "●",
-                            color = AccentGreen,
-                            fontSize = 20.sp
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+
+                            Text(
+                                "●",
+                                color = AccentGreen,
+                                fontSize = 19.sp
+                            )
+
+                            Spacer(
+                                modifier = Modifier.width(12.dp)
+                            )
+
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+
+                                Text(
+                                    device.deviceName
+                                        ?: if (device.isRouter) {
+                                            "Router Huawei"
+                                        } else {
+                                            "Perangkat ${index + 1}"
+                                        },
+
+                                    color = Color.White,
+
+                                    fontWeight = FontWeight.Bold,
+
+                                    fontSize = 16.sp
+                                )
+
+                                if (device.isRouter) {
+
+                                    Text(
+                                        "ROUTER / GATEWAY",
+                                        color = AccentBlue,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+
+                        Divider(
+                            color = Color.DarkGray
                         )
 
-                        Spacer(modifier = Modifier.width(14.dp))
+                        Text(
+                            "Alamat IP",
+                            color = Color.Gray,
+                            fontSize = 11.sp
+                        )
 
-                        Column {
-                            Text(
-                                "Perangkat ${index + 1}",
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            )
+                        Text(
+                            device.ipAddress,
+                            color = Color.White,
+                            fontSize = 13.sp
+                        )
 
-                            Text(
-                                "IP: ${device.ipAddress}",
-                                color = Color.LightGray,
-                                fontSize = 13.sp
-                            )
+                        Text(
+                            "Alamat MAC",
+                            color = Color.Gray,
+                            fontSize = 11.sp
+                        )
 
-                            Text(
-                                "Merespons jaringan",
-                                color = AccentGreen,
-                                fontSize = 11.sp
-                            )
-                        }
+                        Text(
+                            device.macAddress ?: "Tidak diketahui",
+                            color = Color.LightGray,
+                            fontSize = 13.sp
+                        )
+
+                        Text(
+                            "Status: Merespons jaringan",
+                            color = AccentGreen,
+                            fontSize = 11.sp
+                        )
                     }
                 }
             }
@@ -456,7 +590,9 @@ fun DeviceScannerScreen(onBack: () -> Unit) {
                 "WiFi Guardian • Network Scanner",
                 color = Color.Gray,
                 fontSize = 11.sp,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+                modifier = Modifier.align(
+                    Alignment.CenterHorizontally
+                )
             )
         }
     }
@@ -468,22 +604,31 @@ fun FeatureCard(
     description: String,
     onClick: () -> Unit = {}
 ) {
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() },
+            .clickable {
+                onClick()
+            },
+
         colors = CardDefaults.cardColors(
             containerColor = CardBackground
         ),
+
         shape = RoundedCornerShape(14.dp)
     ) {
+
         Row(
             modifier = Modifier.padding(15.dp),
+
             verticalAlignment = Alignment.CenterVertically
         ) {
+
             Column(
                 modifier = Modifier.weight(1f)
             ) {
+
                 Text(
                     title,
                     color = Color.White,
